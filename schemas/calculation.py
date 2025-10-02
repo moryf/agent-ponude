@@ -123,6 +123,7 @@ class ProizvodPonude(BaseModel):
     duzinaPoKomadu: float
     visinaPoKomadu: float
     dubinaPoKomadu: float
+    kalkulacija: Kalkulacija
 
 # Glavna, krovna šema za kompletan odgovor koji agent generiše.
 class FinalniPredlog(BaseModel):
