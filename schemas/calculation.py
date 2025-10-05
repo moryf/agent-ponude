@@ -25,10 +25,10 @@ class Proizvod(BaseModel):
     """
     Schema za jedan proizvod koji je deo ponude.
     """
-    sifra_proizvoda: str
+    sifra: str
     naziv: str
     opis: Optional[str] = None
-    jedinica_mere: JedinicaMere
+    jedinicaMere: JedinicaMere
     masa: float
     specificnaPovrsina: float
     cenaA: float

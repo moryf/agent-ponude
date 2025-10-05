@@ -1,48 +1,58 @@
+from langgraph.prebuilt import create_react_agent
+
 from core.config import settings
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langgraph.prebuilt import create_react_agent
 from schemas.calculation import Zahtev, FinalniPredlog
-from tools.ponude_tools import pronadji_relevantne_primere_iz_arhive
+from tools.ponude_tools import pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis
+from langchain_core.messages import  HumanMessage
+
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=settings.GOOGLE_API_KEY,
     temperature=0,
     verbose=True,
-    max_retries=3,
 )
-
-tools = [pronadji_relevantne_primere_iz_arhive]
 
 agent = create_react_agent(
     model=llm,
-    tools=tools,
+    tools=[pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis],
+    response_format=FinalniPredlog,
     prompt="""
-    You are an expert in preparing business proposals for clients based on their requests.
-    You have access to a tool that allows you to find relevant examples of past proposals from an archive.
-    Use this tool to gather information and generate a final proposal that meets the client's needs.
-    Ensure that the final proposal is structured according to the 'FinalniPredlog' schema.
-    """,
-    response_format=FinalniPredlog
+    Ti si expert za davanje ponuda za ograde kapije, nadstresnice i druge metalne konstrukcije za firmu Joilart Konstil d.o.o. iz Srbije.
+    Na osnovu upita klijenta, tvoj zadatak je da sastavis detaljan predlog ponude koji ukljucuje:
+    - Opis trazenog proizvoda
+    - Specifikacije materijala
+    - Dimenzije
+    - Procenu troskova
+    UVEK KORISTI alat pronadji_relevantne_primere_iz_arhive da pronadjes najslicnije prethodno radene ponude na osnovu korisnickog upita.
+    Ovo ti daje kljucan kontekst i primere od kojih komponenti se trazeni proizvod sastoji i kako su se slicni projekti radili u proslosti.
+    Nakon sto dobijes rezultate iz alata pronadji_relevantne_primere_iz_arhive, UVEK KORISTI alat pretrazi_bazu_proizvoda_sifra da pronadjes proizvode koji se koriste u kalkulaciji u bazi proizvoda firme Konstil.
+    Ukoliko ne uspes da nadjes proizvod po sifri onda koristi alat pretrazi_bazu_proizvoda_naziv_opis.
+    Koristi ove alate da nadjes sve proizvode koji su ti potrebni kao stavke kalkulacije
+    Ako alat vrati "Nema relevantnih primera u bazi znanja. Moraces da sastavis predlog od nule.", onda moras da sastavis ponudu od nule.
+    UVEK se trudi da ponuda bude sto detaljnija i specificnija.
+    UVEK se predstavi kao "Joilart Konstil d.o.o." i ukljuci kontakt informacije firme u ponudu.
+    UVEK odgovori na srpskom jeziku.
+    Obavezno obracunaj ukupnu cenu po formuli:
+    Ukupna cena = Materijal + (izradaPoKg * Ukupna masa + montazaPoKg * Ukupna masa + cinkovanjePoKg * Ukupna masa + parbanjePoM2 * Povrsina) * stepenSigurnosti
+    
+    """
 )
 
 
-
-def predlog_iz_upita(zahtev:Zahtev) -> FinalniPredlog:
+def predlog_iz_upita(zahtev: Zahtev):
     """
-    Ova funkcija pokrece LLM da obradi zahtev.
-    Prvo se zove alat za pronalazenje relevantnih primera iz arhive,
-    a zatim se koristi LLM da se generise finalni predlog u skladu sa
-    'FinalniPredlog' schemom.
+    Prima upit klijenta i vraca generisani predlog ponude.
     """
-    print("Pokrecem obradu zahteva...")
-    prompt = {"messages": [
-        {"role": "system", "content": "You are an expert in preparing business proposals."},
-        {"role": "user", "content": f"Klijent ({zahtev.ime}, sa brojem telefona {zahtev.broj_telefona}, email {zahtev.email}) je poslao sledeci zahtev: {zahtev.opis}. Pripremi finalni predlog u skladu sa 'FinalniPredlog' schemom."}
-    ]}
-    response = agent.invoke(prompt)
-    print("Finalni predlog generisan:")
-    print(response["structured_response"])
-    print("Zavrsena obrada zahteva.")
+    upit = f"""
+    Klijent: Ime: {zahtev.ime}, Email: {zahtev.email}, Telefon: {zahtev.broj_telefona}.
+    Opis zahteva: {zahtev.opis}.
+    """
+    print("User query:", upit)
+    input = {"messages": [HumanMessage(content=upit)]}
 
-    return response
+    response = agent.invoke(input)
+
+    return response["structured_response"]
+
