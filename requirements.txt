@@ -10,3 +10,4 @@ langchain_community
 langchain-chroma
 sentence-transformers
 langchain-huggingface
+langgraph

@@ -1,62 +1,48 @@
 from core.config import settings
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
+from langgraph.prebuilt import create_react_agent
 from schemas.calculation import Zahtev, FinalniPredlog
-
+from tools.ponude_tools import pronadji_relevantne_primere_iz_arhive
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=settings.GOOGLE_API_KEY,
     temperature=0,
-    verbose=True
+    verbose=True,
+    max_retries=3,
 )
 
-llm = llm.with_structured_output(FinalniPredlog)
+tools = [pronadji_relevantne_primere_iz_arhive]
 
-prompt = ChatPromptTemplate.from_messages([
-    ("system", """Ti si ekspertni komercijalista u firmi Joilart Konstil.
-    Tvoj zadatak je da na osnovu upita klijenta kreiras kompletan i tacan predlog kalkulacije u JSON formatu koji odgovara 'FinalniPredlog' schemi.
-    Tvoj finalni odgovor MORA biti ISKLJUcIVO taj JSON objekat.
-    Nemoj pisati nikakav dodatni tekst pre ili posle JSON-a.
-    Finalni predlog mora sadrzati sledece:
-    1. Podatke o klijentu (ime, telefon, email).
-    2. Naziv ponude (npr. "Ponuda za kapiju i ogradu").
-    3. Listu proizvoda u ponudi, gde svaki proizvod sadrzi:
-       - Naziv proizvoda (npr. "Kapija", "Ograda").
-       - Tip proizvoda (npr. "Kapija", "Ograda", "Gelender").
-       - Ukupno metara i komada.
-       - Dimenzije po komadu (duzina, visina, dubina).
-       - Detaljnu kalkulaciju troskova, ukljucujuci:
-         - Stavke kalkulacije sa nazivom, kolicinom, jedinicom mere, cenom po jedinici, ukupnom cenom, i tipom troska (materijal, rad, usluga).
-         - Troskove po kg/m2 za materijal, cinkovanje, farbanje, montazu, izradu.
-         - Rezijske troskove i stepen sigurnosti.
-         - Ukupno bez PDV i ukupno sa PDV.
-    Koristi sledece cene:
-    - Materijal po kg: 115.0
-    - Cinkovanje po kg: 115.0
-    - Farbanje po m2: 960.0
-    - Montaza po kg: 200.0
-    - Izrada po kg: 115.0
-    - Rezijski troskovi: 1.0
-    - Stepen sigurnosti: 1.5
-    Koristi veleprodajne cene.
-    Ako neki podatak nije naveden u upitu, proceni realnu vrednost.
-    """),
-    ("human", "{input}"),
-])
+agent = create_react_agent(
+    model=llm,
+    tools=tools,
+    prompt="""
+    You are an expert in preparing business proposals for clients based on their requests.
+    You have access to a tool that allows you to find relevant examples of past proposals from an archive.
+    Use this tool to gather information and generate a final proposal that meets the client's needs.
+    Ensure that the final proposal is structured according to the 'FinalniPredlog' schema.
+    """,
+    response_format=FinalniPredlog
+)
+
+
 
 def predlog_iz_upita(zahtev:Zahtev) -> FinalniPredlog:
     """
     Ova funkcija pokrece LLM da obradi zahtev.
+    Prvo se zove alat za pronalazenje relevantnih primera iz arhive,
+    a zatim se koristi LLM da se generise finalni predlog u skladu sa
+    'FinalniPredlog' schemom.
     """
-    print(f"--- Pokretanje LLM sa upitom: {zahtev.opis} ---")
+    print("Pokrecem obradu zahteva...")
+    prompt = {"messages": [
+        {"role": "system", "content": "You are an expert in preparing business proposals."},
+        {"role": "user", "content": f"Klijent ({zahtev.ime}, sa brojem telefona {zahtev.broj_telefona}, email {zahtev.email}) je poslao sledeci zahtev: {zahtev.opis}. Pripremi finalni predlog u skladu sa 'FinalniPredlog' schemom."}
+    ]}
+    response = agent.invoke(prompt)
+    print("Finalni predlog generisan:")
+    print(response["structured_response"])
+    print("Zavrsena obrada zahteva.")
 
-    full_input = (
-        f"Podaci o klijentu: Ime: {zahtev.ime}, Telefon: {zahtev.broj_telefona}, Email: {zahtev.email}. "
-        f"Tekst upita: {zahtev.opis}"
-    )
-
-    odgovor = llm.invoke(prompt.format_messages(input=full_input))
-    print(f"--- LLM Odgovor: {odgovor} ---")
-
-    return odgovor
+    return response
