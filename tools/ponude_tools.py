@@ -20,10 +20,11 @@ def pronadji_relevantne_primere_iz_arhive(upit: str) -> str:
     """
     embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
     vector_store = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function,collection_name="ponude_konstil")
-    print(f"Uspesno povezan sa bazom, nasao sam kolekciju sa {vector_store._collection.count()} dokumenata.")
+    print("Uspesno povezana baza")
     results = vector_store.similarity_search(upit, k=10)
     if not results:
         return "Nema relevantnih primera u bazi znanja. Moraces da sastavis predlog od nule."
+    print("Pronadjeni su primeri iz arhive")
     context = "Pronadeni su sledeci relevantni primeri iz arhive ponuda:\n"
     for i, doc in enumerate(results, 1):
         context += f"--- Primer {i} ---\n{doc.page_content}\n"
@@ -100,14 +101,14 @@ def pretrazi_bazu_proizvoda_naziv_opis(naziv: str, opis:str) -> Proizvod:
         print(f"Greska prilikom parsiranja proizvoda: {e}")
         return None
 
-@tool("sacuvaj_finalni_predlog")
 def sacuvaj_finalni_predlog(finalni_predlog: FinalniPredlog) -> dict:
     """
-    Koristi ovaj alat UVEK kao poslednji korak u rezonovanju.
+    Koristi ovaj alat UVEK kao poslednji korak.
     Nakon sto sastavis kompletan finalni predlog, koristi ovaj alat da ga sacuvas na glavni serve
     :param finalni_predlog: FinalniPredlog objekat koji treba da se cuva na serveru
     :return: dict Ponude sacuvane
     """
+    print("Cuva se podatak")
     API_BASE_URL = "http://konstil_joilart:konstil2024@localhost:8080/api"
 
     results = requests.post(f"{API_BASE_URL}/ponuda/finalniPredlog", finalni_predlog)

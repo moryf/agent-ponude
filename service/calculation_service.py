@@ -1,3 +1,5 @@
+import json
+
 from langgraph.prebuilt import create_react_agent
 
 from core.config import settings
@@ -5,7 +7,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from schemas.calculation import Zahtev, FinalniPredlog
 from tools.ponude_tools import pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis, sacuvaj_finalni_predlog
 from langchain_core.messages import  HumanMessage
-
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
@@ -16,11 +17,11 @@ llm = ChatGoogleGenerativeAI(
 
 agent = create_react_agent(
     model=llm,
-    tools=[pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis, sacuvaj_finalni_predlog],
+    tools=[pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis],
     response_format=FinalniPredlog,
     prompt="""
     Ti si expert za davanje ponuda za ograde kapije, nadstresnice i druge metalne konstrukcije za firmu Joilart Konstil d.o.o. iz Srbije.
-    Na osnovu upita klijenta, tvoj zadatak je da sastavis detaljan predlog ponude koji ukljucuje:
+    Na osnovu upita klijenta, tvoj zadatak je da sastavis detaljan predlog ponude i da ga sacuvas na serveru, koji ukljucuje:
     - Opis trazenog proizvoda
     - Specifikacije materijala
     - Dimenzije
@@ -34,7 +35,6 @@ agent = create_react_agent(
     UVEK se trudi da ponuda bude sto detaljnija i specificnija.
     Obavezno obracunaj ukupnu cenu po formuli:
     Ukupna cena = Materijal + (izradaPoKg * Ukupna masa + montazaPoKg * Ukupna masa + cinkovanjePoKg * Ukupna masa + parbanjePoM2 * Povrsina) * stepenSigurnosti
-    NAKON STO NAPRAVIS FINALNI PREDLOG pozovu sacuvaj_finalni_predlog alat kako bi ga sacuvao na serveru
     """
 )
 
@@ -52,5 +52,9 @@ def predlog_iz_upita(zahtev: Zahtev):
 
     response = agent.invoke(input)
 
-    return response["structured_response"]
+    structured_response = response["structured_response"]
+
+    ponuda = sacuvaj_finalni_predlog(structured_response)
+
+    return ponuda
 
