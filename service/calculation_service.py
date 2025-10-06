@@ -3,7 +3,7 @@ from langgraph.prebuilt import create_react_agent
 from core.config import settings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from schemas.calculation import Zahtev, FinalniPredlog
-from tools.ponude_tools import pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis
+from tools.ponude_tools import pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis, sacuvaj_finalni_predlog
 from langchain_core.messages import  HumanMessage
 
 
@@ -16,7 +16,7 @@ llm = ChatGoogleGenerativeAI(
 
 agent = create_react_agent(
     model=llm,
-    tools=[pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis],
+    tools=[pronadji_relevantne_primere_iz_arhive, pretrazi_bazu_proizvoda_sifra, pretrazi_bazu_proizvoda_naziv_opis, sacuvaj_finalni_predlog],
     response_format=FinalniPredlog,
     prompt="""
     Ti si expert za davanje ponuda za ograde kapije, nadstresnice i druge metalne konstrukcije za firmu Joilart Konstil d.o.o. iz Srbije.
@@ -32,11 +32,9 @@ agent = create_react_agent(
     Koristi ove alate da nadjes sve proizvode koji su ti potrebni kao stavke kalkulacije
     Ako alat vrati "Nema relevantnih primera u bazi znanja. Moraces da sastavis predlog od nule.", onda moras da sastavis ponudu od nule.
     UVEK se trudi da ponuda bude sto detaljnija i specificnija.
-    UVEK se predstavi kao "Joilart Konstil d.o.o." i ukljuci kontakt informacije firme u ponudu.
-    UVEK odgovori na srpskom jeziku.
     Obavezno obracunaj ukupnu cenu po formuli:
     Ukupna cena = Materijal + (izradaPoKg * Ukupna masa + montazaPoKg * Ukupna masa + cinkovanjePoKg * Ukupna masa + parbanjePoM2 * Povrsina) * stepenSigurnosti
-    
+    NAKON STO NAPRAVIS FINALNI PREDLOG pozovu sacuvaj_finalni_predlog alat kako bi ga sacuvao na serveru
     """
 )
 

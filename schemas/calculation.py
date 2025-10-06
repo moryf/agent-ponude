@@ -57,15 +57,15 @@ class StavkaKalkulacije(BaseModel):
     proizvod: Proizvod
 
     nacinRacunanjaKomada: NacinRacunanjaKomada = NacinRacunanjaKomada.KOMAD
-    razmak: Optional[float] = None
-    multiplikator: Optional[float] = None
-    rucniDodatak: Optional[int] = None
-    kolicina_komada: Optional[int] = None
+    razmak: float = 0
+    multiplikator: float = 0
+    rucniDodatak: float = 0
+    kolicina_komada: float = 0
 
     nacinRacunanjaDuzineKomada: NacinRacunanjaDuzineKomada = NacinRacunanjaDuzineKomada.UPISANO
-    referentnaDuzina: Optional[float] = None
-    razlikaDuzine: Optional[float] = None
-    duzinaKomada: Optional[float] = None
+    referentnaDuzina: float = 0
+    razlikaDuzine: float = 0
+    duzinaKomada: float = 0
 
     kolicina: float
     cinkovanje: bool
@@ -91,7 +91,7 @@ class Kalkulacija(BaseModel):
     farbanje: bool
     montaza: bool
     izrada: bool
-    stavke_kalkulacije: List[StavkaKalkulacije] = []
+    stavkaKalkulacijeList: List[StavkaKalkulacije] = []
     materijalPoKg: float
     cinkovanjePoKg: float
     farbanjePoM2: float
@@ -117,13 +117,13 @@ class ProizvodPonude(BaseModel):
     Schema za jedan finalni proizvod koji je deo ponude (npr. "Kapija", "Ograda").
     """
     naziv: str
-    tip_proizvoda_ponuda: TipProizvodaPonuda
+    tipProizvodaPonuda: TipProizvodaPonuda
     ukupnoMetara: float
     ukupnoKomada: float
     duzinaPoKomadu: float
     visinaPoKomadu: float
     dubinaPoKomadu: float
-    kalkulacija: Kalkulacija
+    kalkulacijaList: List[Kalkulacija] = []
 
 # Glavna, krovna šema za kompletan odgovor koji agent generiše.
 class FinalniPredlog(BaseModel):
