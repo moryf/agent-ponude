@@ -51,10 +51,6 @@ def predlog_iz_upita(zahtev: Zahtev):
     input = {"messages": [HumanMessage(content=upit)]}
 
     response = agent.invoke(input)
+    return response["structured_response"]
 
-    structured_response = response["structured_response"]
-
-    ponuda = sacuvaj_finalni_predlog(structured_response)
-
-    return ponuda
 

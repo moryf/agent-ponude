@@ -21,7 +21,7 @@ def pronadji_relevantne_primere_iz_arhive(upit: str) -> str:
     embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
     vector_store = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function,collection_name="ponude_konstil")
     print("Uspesno povezana baza")
-    results = vector_store.similarity_search(upit, k=10)
+    results = vector_store.similarity_search(upit, k=7)
     if not results:
         return "Nema relevantnih primera u bazi znanja. Moraces da sastavis predlog od nule."
     print("Pronadjeni su primeri iz arhive")
@@ -70,7 +70,7 @@ def pretrazi_bazu_proizvoda_sifra(sifra:str) -> Proizvod:
 @tool("pretrazi_bazu_proizvoda_naziv_opis")
 def pretrazi_bazu_proizvoda_naziv_opis(naziv: str, opis:str) -> Proizvod:
     """
-    Koristi ovaj alat da pronadjes proizvod u bazi proizvoda firme Konstil, ukoliko nnisi uspeo da ih nadjes po sifri sa alatom pretrazi_bazu_proizvoda_sifra.
+    Koristi ovaj alat SAMO AKO nisi uspeo da pronadjes proizvod preko sifre.
     Pokusaj da nadjes sve proizvode koji najvise su ti potrebni za sastavljanke kalulacije.
     Ovi proizvodi se koriste kao Stavke Kalkulacije u ponudi.
     Ulazni parametri su sifra, naziv i opis proizvoda.
@@ -101,7 +101,7 @@ def pretrazi_bazu_proizvoda_naziv_opis(naziv: str, opis:str) -> Proizvod:
         print(f"Greska prilikom parsiranja proizvoda: {e}")
         return None
 
-def sacuvaj_finalni_predlog(finalni_predlog: FinalniPredlog) -> dict:
+def sacuvaj_finalni_predlog(finalni_predlog) -> dict:
     """
     Koristi ovaj alat UVEK kao poslednji korak.
     Nakon sto sastavis kompletan finalni predlog, koristi ovaj alat da ga sacuvas na glavni serve

@@ -58,14 +58,14 @@ class StavkaKalkulacije(BaseModel):
 
     nacinRacunanjaKomada: NacinRacunanjaKomada = NacinRacunanjaKomada.KOMAD
     razmak: float = 0
-    multiplikator: float = 0
-    rucniDodatak: float = 0
-    kolicina_komada: float = 0
+    multiplikator: float
+    rucniDodatak: float
+    kolicina_komada: float
 
     nacinRacunanjaDuzineKomada: NacinRacunanjaDuzineKomada = NacinRacunanjaDuzineKomada.UPISANO
-    referentnaDuzina: float = 0
-    razlikaDuzine: float = 0
-    duzinaKomada: float = 0
+    referentnaDuzina: float
+    razlikaDuzine: float
+    duzinaKomada: float
 
     kolicina: float
     cinkovanje: bool
